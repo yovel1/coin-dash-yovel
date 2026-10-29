@@ -38,8 +38,9 @@ class CoinDash extends Phaser.Scene {
     this.cursors = this.input.keyboard.createCursorKeys();
     this.keys = this.input.keyboard.addKeys('W,A,S,D,R');
     this.input.keyboard.on('keydown-R', () => this.scene.restart());
+    const numberKeys = ['ONE', 'TWO', 'THREE'];
     Object.keys(c.difficulties).forEach((name, i) => {
-      this.input.keyboard.on(`keydown-${i + 1}`, () => {
+      this.input.keyboard.on(`keydown-${numberKeys[i]}`, () => {
         difficulty = name;
         this.scene.restart();
       });
