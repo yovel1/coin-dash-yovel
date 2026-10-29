@@ -10,15 +10,18 @@ function saveBest(n) {
   try { localStorage.setItem(BEST_KEY, String(n)); } catch (e) { /* storage blocked */ }
 }
 
+let difficulty = COIN_DASH.defaultDifficulty;
+
 class CoinDash extends Phaser.Scene {
   constructor() { super('CoinDash'); }
 
   create() {
     const c = COIN_DASH;
+    const d = c.difficulties[difficulty];
     this.score = 0;
     this.best = loadBest();
     this.finished = false;
-    this.deadline = this.time.now + c.roundSeconds * 1000;
+    this.deadline = this.time.now + d.roundSeconds * 1000;
     this.physics.world.setBounds(0, 44, c.width, c.height - 44);
     this.add.grid(c.width / 2, c.height / 2, c.width, c.height, 40, 40,
       c.colors.background, 1, 0x24334b, 0.45);
@@ -31,12 +34,12 @@ class CoinDash extends Phaser.Scene {
     this.coin.body.setCircle(9);
     this.placeCoin();
     this.drones = this.physics.add.group();
-    for (let i = 0; i < c.droneCount; i++) {
-      const drone = this.add.rectangle(90 + i * 270, 100, 26, 26, c.colors.drone);
+    for (let i = 0; i < d.droneCount; i++) {
+      const drone = this.add.rectangle(c.width * (i + 0.5) / d.droneCount, 100, 26, 26, c.colors.drone);
       this.drones.add(drone);
       drone.body.setCollideWorldBounds(true).setBounce(1, 1);
       const angle = (35 + i * 105) * Math.PI / 180;
-      drone.body.setVelocity(Math.cos(angle) * c.droneSpeed, Math.sin(angle) * c.droneSpeed);
+      drone.body.setVelocity(Math.cos(angle) * d.droneSpeed, Math.sin(angle) * d.droneSpeed);
     }
     this.physics.add.overlap(this.player, this.coin, () => {
       if (this.finished) return;
@@ -47,6 +50,13 @@ class CoinDash extends Phaser.Scene {
     this.cursors = this.input.keyboard.createCursorKeys();
     this.keys = this.input.keyboard.addKeys('W,A,S,D,R');
     this.input.keyboard.on('keydown-R', () => this.scene.restart());
+    const numberKeys = ['ONE', 'TWO', 'THREE'];
+    Object.keys(c.difficulties).forEach((name, i) => {
+      this.input.keyboard.on(`keydown-${numberKeys[i]}`, () => {
+        difficulty = name;
+        this.scene.restart();
+      });
+    });
   }
 
   placeCoin() {
@@ -70,7 +80,7 @@ class CoinDash extends Phaser.Scene {
     const direction = new Phaser.Math.Vector2(dx, dy).normalize().scale(COIN_DASH.playerSpeed);
     this.player.body.setVelocity(direction.x, direction.y);
     const seconds = Math.max(0, Math.ceil((this.deadline - this.time.now) / 1000));
-    this.hud.setText(`Coins: ${this.score}   Best: ${this.best}   Time: ${seconds}s`);
+    this.hud.setText(`Coins: ${this.score}   Best: ${this.best}   ${COIN_DASH.difficulties[difficulty].label}   Time: ${seconds}s`);
     if (seconds === 0) this.finish('Time is up!');
   }
 
@@ -84,9 +94,9 @@ class CoinDash extends Phaser.Scene {
       this.best = this.score;
       saveBest(this.best);
     }
-    this.add.rectangle(c.width / 2, c.height / 2, 460, isNewBest ? 190 : 150, 0x0a1120, 0.95);
+    this.add.rectangle(c.width / 2, c.height / 2, 460, isNewBest ? 230 : 190, 0x0a1120, 0.95);
     this.add.text(c.width / 2, c.height / 2,
-      `${reason}\n${this.score} coins collected${isNewBest ? '\nNew best!' : ''}\nPress R to try again`,
+      `${reason}\n${this.score} coins collected${isNewBest ? '\nNew best!' : ''}\nPress R to try again\n1/2/3: difficulty`,
       { font: '24px monospace', color: '#ffffff', align: 'center', lineSpacing: 12 }
     ).setOrigin(0.5);
   }
